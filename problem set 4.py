@@ -5,12 +5,15 @@ Created on Sat Mar 28 05:53:44 2020
 
 @author: dawnstaana
 """
+from accountio import write_account
+from accountio import read_account
+import random
+
+current_account = 0
 
 def login(input_username,input_password):
-    username = 'python'
-    password = '2157'
     
-    if username == input_username and password == input_password:
+    if lines[0].rstrip('\n') == input_username and lines[1] == input_password:
         return True
     
     else:
@@ -47,6 +50,8 @@ def message():
     print('To withdraw type "w" or "W"')
     print('To terminate program type "q" or "Q"')
     print('To print command history type "h" or "H"')
+    print('To create new account type "n" or "N"')
+    print('To select account type "a" or "A"')
 
 def print_history():
     for char in HISTORY:
@@ -61,74 +66,146 @@ def print_history():
 
 def do_commands():
     message()
-    legal = ['b','d','w','q','h']
+    global current_account
+    legal = ['b','d','w','q','h','n','a']
     command = input('Please input your command: ')
     command = command.lower()
     
     while True:
         if command in legal:
-            if command == 'q':
-                exit()
-        
-            elif command == 'b':
-                action = get_balance()
-                print(action)
+            if current_account == 0 and command in ['d','b','w','h']:
+                print('Please choose an account first or create a new account')
                 command = input('Please input your command: ')
                 command = command.lower()
-
-            elif command == 'd':
-                amt = input('Please input deposit amount: ')
-                try:
-                    action = deposit(int(amt))
-                    x = [command,amt,get_balance()]
-                    HISTORY.append(x)
-                    command = input('Please input your command: ')
-                    command = command.lower()
-                except ValueError as ve:
-                    print(ve)
-                    command = input('Please input your command: ')
-                    command = command.lower()
-
-            elif command == 'h':
-                print_history()
-                command = input('Please input your command: ')
-                command = command.lower()
-
+            
             else:
-                amt = int(input('Please input withdraw amount: '))
-                try:
-                    action = withdraw(amt)
-                    x = [command,amt,get_balance()]
-                    HISTORY.append(x)
+                if command == 'q':
+                    current_account
+                    current_account = 0
+                    exit()
+        
+                elif command == 'b':
+                    action = get_balance()
+                    print(action)
                     command = input('Please input your command: ')
                     command = command.lower()
 
-                except ValueError as ve:
-                    print(ve)
+                elif command == 'd':
+                    amt = float(input('Please input deposit amount: '))
+                    try:
+                        action = deposit(amt)
+                        x = [command,amt,get_balance()]
+                        HISTORY.append(x)
+                        write_account(current_account, get_balance, ['deposit',amt])
+                        command = input('Please input your command: ')
+                        command = command.lower()
+                    except ValueError as ve:
+                        print(ve)
+                        command = input('Please input your command: ')
+                        command = command.lower()
+
+                elif command == 'h':
+                    print_history()
                     command = input('Please input your command: ')
                     command = command.lower()
+                
+                elif command == 'n':
+                    acctnum = new_account()
+                    print(f'Your new account number is {acctnum}')
+                    write_account(acctnum,0,[])
+                    command = input('Please input your command: ')
+                    command = command.lower()
+            
+                elif command == 'a':
+                    while True:
+                        try:
+                            acct = int(input('Please type the account number: '))
+                            current_account = acct
+                            action = read_account(current_account)
+                            print(action)
+                            do_commands()
+                        except FileNotFoundError as ve:
+                            print(ve)
+                            acct = int(input('Please type the account number: '))
+                            read_account(acct)
+            
+                else:
+                    amt = float(input('Please input withdraw amount: '))
+                    try:
+                        action = withdraw(amt)
+                        x = [command,amt,get_balance()]
+                        HISTORY.append(x)
+                        write_account(current_account, get_balance(), ['withdraw',amt])
+                        command = input('Please input your command: ')
+                        command = command.lower()
+
+                    except ValueError as ve:
+                        print(ve)
+                        command = input('Please input your command: ')
+                        command = command.lower()
         
         else:
             print('Invalid command. Please try again')
             command = input('Please input your command: ')
             command = command.lower()
 
+def new_account():
+    acctnum = [random.randint(1,9)]
+    last_4 = random.sample(range(0,9),4)
+    for num in last_4:
+        acctnum.append(num)
+    acctnum = int(''.join(map(str,acctnum)))
+    globals()['account_'+str(acctnum)] = write_account(acctnum,float(0),[])
+    
+    return acctnum
+
+   
+
 if __name__ == '__main__':
     print('Welcome to money heist e-banking')
-    input_username = input('Please input your username: ')
-    input_password = input('Please input your password: ')
-
-    count = 0
-
+    action = input('Type "login" to login or "Change" to change username/password: ')
+    action = action.lower()
     while True:
-        if count == 3:
-            exit()
-
-        elif login(input_username,input_password):
-            action = do_commands()
-
-        else:
-            count += 1
-            print(f'Login failed. You have {3-count} attempts left')
+        if action == 'login':
+            f = open('banking.creds','r')
+            lines = f.readlines()
+            f.close()
             input_username = input('Please input your username: ')
             input_password = input('Please input your password: ')
+
+            count = 1
+            while True:
+                if count == 3:
+                    exit()
+
+                elif login(input_username,input_password):
+                    do_commands()
+                else:
+                    count += 1
+                    print(f'Login failed. Please try again')
+                    input_username = input('Please input your username: ')
+                    input_password = input('Please input your password: ')
+            
+        elif action == 'change':
+            f = open('banking.creds','w')
+        
+            new_username = input('Please type in your new username: ')
+            new_password = input('Please type in your new password: ')
+        
+            f.write(new_username + '\n')
+            f.write(new_password)
+        
+            f.close()
+        
+            f = open('banking.creds','r')
+            lines = f.readlines()
+            f.close()
+            action = input('Type "login" to login or "Change" to change username/password: ')
+            action = action.lower()
+
+        else:
+            print('Invalid action please try again')
+            action = input('Type "login" to login or "Change" to change username/password: ')
+            action = action.lower()
+
+        
