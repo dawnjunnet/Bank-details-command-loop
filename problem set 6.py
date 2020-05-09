@@ -96,6 +96,7 @@ def do_commands():
                         x = [command,amt,get_balance()]
                         HISTORY.append(x)
                         write_account(current_account, get_balance, ['deposit',amt])
+                        print(account_balance)
                         command = input('Please input your command: ')
                         command = command.lower()
                     except ValueError as ve:
@@ -135,6 +136,7 @@ def do_commands():
                         withdraw(amt)
                         x = [command,amt,get_balance()]
                         HISTORY.append(x)
+                        print(account_balance)
                         write_account(current_account, get_balance(), ['withdraw',amt])
                         command = input('Please input your command: ')
                         command = command.lower()
@@ -150,15 +152,15 @@ def do_commands():
             command = command.lower()
 
 def new_account():
-    acctnum = [random.randint(1,9)]
+    acctnum = [str(random.randint(1,9))]
     last_4 = random.sample(range(0,9),4)
     for ind,num in enumerate(last_4):
         last_4[ind] = str(num)
     for num in last_4:
         acctnum.append(num)
-    acctnum = int(''.join(last_4))
-
-    return acctnum
+    
+    final = int(''.join(acctnum))
+    return final
 
 
 
@@ -176,7 +178,7 @@ if __name__ == '__main__':
 
             count = 1
             while True:
-                if count == 3:
+                if count > 3:
                     exit()
 
                 elif login(input_username,input_password):
